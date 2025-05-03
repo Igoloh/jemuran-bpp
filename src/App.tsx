@@ -28,16 +28,13 @@ function App() {
           <Route path="/login" element={
             isAuthenticated ? <Navigate to="/" replace /> : <Login />
           } />
-          <Route path="/" element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }>
+          <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="programs" element={<ProgramList />} />
             <Route path="budget-codes" element={<BudgetCodes />} />
             <Route path="detail-entry/:id" element={<DetailEntry />} />
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AppProvider>

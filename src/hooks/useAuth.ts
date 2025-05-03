@@ -15,7 +15,12 @@ export const useAuth = () => {
         
         if (!mounted) return;
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error checking auth status:', error);
+          setIsAuthenticated(false);
+          setUserRole(null);
+          return;
+        }
         
         setIsAuthenticated(!!session);
         
@@ -43,12 +48,14 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      setIsAuthenticated(!!session);
-      
-      if (session?.user.email) {
-        const username = session.user.email.split('@')[0].toLowerCase();
-        setUserRole(username === 'ppk.8104' ? 'Admin' : 'User');
-      } else {
+      if (event === 'SIGNED_IN') {
+        setIsAuthenticated(true);
+        if (session?.user.email) {
+          const username = session.user.email.split('@')[0].toLowerCase();
+          setUserRole(username === 'ppk.8104' ? 'Admin' : 'User');
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
         setUserRole(null);
       }
       
