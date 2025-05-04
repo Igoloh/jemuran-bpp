@@ -15,7 +15,9 @@ const Layout: React.FC = () => {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
         <div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-white border-r border-gray-200">
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-blue-600">
-            <Logo className="h-10 w-auto" />
+            <div className="flex justify-center w-full">
+              <Logo className="h-36 w-auto" />
+            </div>
             <button onClick={() => setSidebarOpen(false)} className="text-white hover:text-gray-200">
               <span className="sr-only">Close sidebar</span>
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -30,8 +32,8 @@ const Layout: React.FC = () => {
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-64 border-r border-gray-200 bg-white">
-          <div className="h-16 flex items-center px-6 border-b border-gray-200 bg-blue-600">
-            <Logo className="h-10 w-auto" />
+          <div className="h-16 flex items-center justify-center border-b border-gray-200 bg-blue-600">
+            <Logo className="h-36 w-auto" />
           </div>
           <Sidebar />
         </div>
