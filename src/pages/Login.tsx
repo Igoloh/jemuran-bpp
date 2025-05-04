@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signIn } from '../lib/auth';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Copyright } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import Logo from '../components/Logo';
 
@@ -135,6 +135,14 @@ const Login: React.FC = () => {
             </div>
           </form>
         </div>
+      </div>
+
+      <div className="mt-8 text-center text-sm text-white">
+        <div className="flex items-center justify-center">
+          <Copyright className="h-4 w-4 mr-1" />
+          2025 - 340060155
+        </div>
+        BPS Kabupaten Buru
       </div>
     </div>
   );

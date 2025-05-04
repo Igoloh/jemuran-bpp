@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Menu } from 'lucide-react';
+import { Menu, Copyright } from 'lucide-react';
 import Logo from './Logo';
 
 const Layout: React.FC = () => {
@@ -26,6 +26,13 @@ const Layout: React.FC = () => {
             </button>
           </div>
           <Sidebar />
+          <div className="mt-auto p-4 text-center text-sm text-gray-500 border-t">
+            <div className="flex items-center justify-center">
+              <Copyright className="h-4 w-4 mr-1" />
+              2025 - 340060155
+            </div>
+            BPS Kabupaten Buru
+          </div>
         </div>
       </div>
 
@@ -36,6 +43,13 @@ const Layout: React.FC = () => {
             <Logo className="h-36 w-auto" />
           </div>
           <Sidebar />
+          <div className="mt-auto p-4 text-center text-sm text-gray-500 border-t">
+            <div className="flex items-center justify-center">
+              <Copyright className="h-4 w-4 mr-1" />
+              2025 - 340060155
+            </div>
+            BPS Kabupaten Buru
+          </div>
         </div>
       </div>
 
