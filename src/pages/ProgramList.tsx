@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Plus, Edit, Trash2, Copy, ClipboardPaste, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Copy, ClipboardPaste } from 'lucide-react';
 
 const ProgramList: React.FC = () => {
   const { budgetCodes, deleteBudgetCode, addBudgetCode, updateBudgetCode } = useAppContext();
@@ -16,9 +16,7 @@ const ProgramList: React.FC = () => {
     componentTitle: ''
   });
   const [copiedProgram, setCopiedProgram] = useState<typeof formData | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRoCode, setSelectedRoCode] = useState('');
-  const itemsPerPage = 10;
+  const [filterRoCode, setFilterRoCode] = useState('');
 
   // RO Code lists - sorted
   const dukmanRoCodes = ['2886.EBA.956', '2886.EBA.962', '2886.EBA.994', '2886.EBD.955'].sort();
@@ -30,6 +28,9 @@ const ProgramList: React.FC = () => {
     '2907.BMA.008', '2908.BMA.004', '2908.BMA.009', '2909.BMA.005',
     '2910.BMA.007', '2910.BMA.008'
   ].sort();
+
+  // Get unique RO codes for the current program
+  const currentRoCodes = activeTab === 'Dukman' ? dukmanRoCodes : ppisRoCodes;
 
   // Get component codes based on program and RO code - sorted
   const getComponentCodes = (program: 'Dukman' | 'PPIS', roCode: string) => {
@@ -61,7 +62,7 @@ const ProgramList: React.FC = () => {
   const filteredBudgetCodes = budgetCodes
     .filter(code => {
       const matchesProgram = code.program === activeTab;
-      const matchesRoCode = !selectedRoCode || code.roCode === selectedRoCode;
+      const matchesRoCode = !filterRoCode || code.roCode === filterRoCode;
       return matchesProgram && matchesRoCode;
     })
     .sort((a, b) => {
@@ -72,16 +73,6 @@ const ProgramList: React.FC = () => {
       // Then sort by component code
       return a.componentCode.localeCompare(b.componentCode);
     });
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredBudgetCodes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredBudgetCodes.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -182,10 +173,11 @@ const ProgramList: React.FC = () => {
   // Get current component codes based on form state
   const currentComponentCodes = getComponentCodes(formData.program, formData.roCode);
 
-  // Reset to first page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, selectedRoCode]);
+  // Handle program tab change
+  const handleTabChange = (program: 'Dukman' | 'PPIS') => {
+    setActiveTab(program);
+    setFilterRoCode(''); // Reset RO code filter when changing programs
+  };
 
   return (
     <div className="space-y-6">
@@ -211,15 +203,12 @@ const ProgramList: React.FC = () => {
         </div>
       </div>
 
-      {/* Program Tabs and Filters */}
+      {/* Program Tabs and Filter */}
       <div className="border-b border-gray-200">
         <div className="flex justify-between items-center">
           <nav className="-mb-px flex space-x-8">
             <button
-              onClick={() => {
-                setActiveTab('Dukman');
-                setSelectedRoCode('');
-              }}
+              onClick={() => handleTabChange('Dukman')}
               className={`${
                 activeTab === 'Dukman'
                   ? 'border-blue-500 text-blue-600'
@@ -229,10 +218,7 @@ const ProgramList: React.FC = () => {
               Dukman
             </button>
             <button
-              onClick={() => {
-                setActiveTab('PPIS');
-                setSelectedRoCode('');
-              }}
+              onClick={() => handleTabChange('PPIS')}
               className={`${
                 activeTab === 'PPIS'
                   ? 'border-blue-500 text-blue-600'
@@ -244,12 +230,12 @@ const ProgramList: React.FC = () => {
           </nav>
           <div className="flex items-center space-x-4">
             <select
-              value={selectedRoCode}
-              onChange={(e) => setSelectedRoCode(e.target.value)}
+              value={filterRoCode}
+              onChange={(e) => setFilterRoCode(e.target.value)}
               className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">Semua Kode RO</option>
-              {(activeTab === 'Dukman' ? dukmanRoCodes : ppisRoCodes).map(code => (
+              {currentRoCodes.map(code => (
                 <option key={code} value={code}>{code}</option>
               ))}
             </select>
@@ -260,8 +246,8 @@ const ProgramList: React.FC = () => {
       {/* Program Content */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
-          {currentItems.length > 0 ? (
-            currentItems.map((code) => (
+          {filteredBudgetCodes.length > 0 ? (
+            filteredBudgetCodes.map((code) => (
               <li key={code.id}>
                 <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
@@ -314,72 +300,6 @@ const ProgramList: React.FC = () => {
             </li>
           )}
         </ul>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Sebelumnya
-              </button>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Selanjutnya
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Menampilkan <span className="font-medium">{startIndex + 1}</span> sampai{' '}
-                  <span className="font-medium">
-                    {Math.min(endIndex, filteredBudgetCodes.length)}
-                  </span>{' '}
-                  dari <span className="font-medium">{filteredBudgetCodes.length}</span> data
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index + 1}
-                      onClick={() => handlePageChange(index + 1)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                        currentPage === index + 1
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Next</span>
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Add/Edit Program Modal */}
