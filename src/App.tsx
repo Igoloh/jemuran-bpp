@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import ProgramList from './pages/ProgramList';
@@ -9,6 +9,35 @@ import Login from './pages/Login';
 import { AppProvider } from './context/AppContext';
 import PrivateRoute from './components/PrivateRoute';
 import { useAuth } from './hooks/useAuth';
+
+// RouteTracker component to handle route persistence
+const RouteTracker: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Store current path in localStorage whenever it changes
+    localStorage.setItem('lastPath', location.pathname);
+  }, [location]);
+
+  return null;
+};
+
+// InitialRedirect component to handle initial routing
+const InitialRedirect: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const lastPath = localStorage.getItem('lastPath');
+      if (lastPath && lastPath !== '/login') {
+        navigate(lastPath);
+      }
+    }
+  }, [isAuthenticated, navigate]);
+
+  return null;
+};
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,6 +53,8 @@ function App() {
   return (
     <AppProvider>
       <Router>
+        <RouteTracker />
+        <InitialRedirect />
         <Routes>
           <Route path="/login" element={
             isAuthenticated ? <Navigate to="/" replace /> : <Login />
