@@ -59,6 +59,27 @@ const Dashboard: React.FC = () => {
     { q1: 0, q2: 0, q3: 0, q4: 0 }
   );
 
+  // Calculate quarterly withdrawal data by category
+  const quarterlyTotalsByCategory = budgetCodes.reduce(
+    (acc, code) => {
+      const withdrawal = code.quarterly_withdrawal || { q1: 0, q2: 0, q3: 0, q4: 0 };
+      const category = code.program === 'Dukman' && code.componentCode === '001' 
+        ? 'belanja51' 
+        : 'belanja52';
+      
+      acc[category].q1 += withdrawal.q1 || 0;
+      acc[category].q2 += withdrawal.q2 || 0;
+      acc[category].q3 += withdrawal.q3 || 0;
+      acc[category].q4 += withdrawal.q4 || 0;
+      
+      return acc;
+    },
+    { 
+      belanja51: { q1: 0, q2: 0, q3: 0, q4: 0 },
+      belanja52: { q1: 0, q2: 0, q3: 0, q4: 0 }
+    }
+  );
+
   const quarterlyData = {
     labels: ['Triwulan I', 'Triwulan II', 'Triwulan III', 'Triwulan IV'],
     datasets: [
@@ -131,6 +152,22 @@ const Dashboard: React.FC = () => {
     q4: totalWithdrawal ? (quarterlyTotals.q4 / totalWithdrawal) * 100 : 0,
   };
 
+  // Calculate cumulative totals for each category
+  const cumulativeTotals = {
+    belanja51: {
+      q1: quarterlyTotalsByCategory.belanja51.q1,
+      q2: quarterlyTotalsByCategory.belanja51.q1 + quarterlyTotalsByCategory.belanja51.q2,
+      q3: quarterlyTotalsByCategory.belanja51.q1 + quarterlyTotalsByCategory.belanja51.q2 + quarterlyTotalsByCategory.belanja51.q3,
+      q4: quarterlyTotalsByCategory.belanja51.q1 + quarterlyTotalsByCategory.belanja51.q2 + quarterlyTotalsByCategory.belanja51.q3 + quarterlyTotalsByCategory.belanja51.q4
+    },
+    belanja52: {
+      q1: quarterlyTotalsByCategory.belanja52.q1,
+      q2: quarterlyTotalsByCategory.belanja52.q1 + quarterlyTotalsByCategory.belanja52.q2,
+      q3: quarterlyTotalsByCategory.belanja52.q1 + quarterlyTotalsByCategory.belanja52.q2 + quarterlyTotalsByCategory.belanja52.q3,
+      q4: quarterlyTotalsByCategory.belanja52.q1 + quarterlyTotalsByCategory.belanja52.q2 + quarterlyTotalsByCategory.belanja52.q3 + quarterlyTotalsByCategory.belanja52.q4
+    }
+  };
+
   // Format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -142,8 +179,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard Monitoring</h1>
-      
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
@@ -269,21 +304,66 @@ const Dashboard: React.FC = () => {
           <h3 className="text-lg font-medium text-gray-900">Detail Rencana Penarikan</h3>
         </div>
         <div className="px-6 py-5">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[
-              { quarter: 'I', value: quarterlyTotals.q1, percent: quarterlyPercentages.q1 },
-              { quarter: 'II', value: quarterlyTotals.q2, percent: quarterlyPercentages.q2 },
-              { quarter: 'III', value: quarterlyTotals.q3, percent: quarterlyPercentages.q3 },
-              { quarter: 'IV', value: quarterlyTotals.q4, percent: quarterlyPercentages.q4 },
-            ].map(({ quarter, value, percent }) => (
-              <div key={quarter} className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-500">Triwulan {quarter}</h4>
-                <p className="mt-2 text-xl font-semibold text-gray-900">{formatCurrency(value)}</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  {percent.toFixed(1)}% dari total
-                </p>
+          <div className="space-y-8">
+            {/* Regular quarterly details */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[
+                { quarter: 'I', value: quarterlyTotals.q1, percent: quarterlyPercentages.q1 },
+                { quarter: 'II', value: quarterlyTotals.q2, percent: quarterlyPercentages.q2 },
+                { quarter: 'III', value: quarterlyTotals.q3, percent: quarterlyPercentages.q3 },
+                { quarter: 'IV', value: quarterlyTotals.q4, percent: quarterlyPercentages.q4 },
+              ].map(({ quarter, value, percent }) => (
+                <div key={quarter} className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-500">Triwulan {quarter}</h4>
+                  <p className="mt-2 text-xl font-semibold text-gray-900">{formatCurrency(value)}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {percent.toFixed(1)}% dari total
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Cumulative Belanja 51 */}
+            <div className="border-t pt-6">
+              <h4 className="text-base font-medium text-gray-900 mb-4">Rencana Belanja 51 (Kumulatif)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                  { quarter: 'I', value: cumulativeTotals.belanja51.q1 },
+                  { quarter: 'II', value: cumulativeTotals.belanja51.q2 },
+                  { quarter: 'III', value: cumulativeTotals.belanja51.q3 },
+                  { quarter: 'IV', value: cumulativeTotals.belanja51.q4 },
+                ].map(({ quarter, value }) => (
+                  <div key={quarter} className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-blue-700">s.d. Triwulan {quarter}</h4>
+                    <p className="mt-2 text-xl font-semibold text-blue-900">{formatCurrency(value)}</p>
+                    <p className="mt-1 text-sm text-blue-600">
+                      {((value / cumulativeTotals.belanja51.q4) * 100).toFixed(1)}% dari total
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Cumulative Belanja 52 */}
+            <div className="border-t pt-6">
+              <h4 className="text-base font-medium text-gray-900 mb-4">Rencana Belanja 52 (Kumulatif)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                  { quarter: 'I', value: cumulativeTotals.belanja52.q1 },
+                  { quarter: 'II', value: cumulativeTotals.belanja52.q2 },
+                  { quarter: 'III', value: cumulativeTotals.belanja52.q3 },
+                  { quarter: 'IV', value: cumulativeTotals.belanja52.q4 },
+                ].map(({ quarter, value }) => (
+                  <div key={quarter} className="bg-green-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-green-700">s.d. Triwulan {quarter}</h4>
+                    <p className="mt-2 text-xl font-semibold text-green-900">{formatCurrency(value)}</p>
+                    <p className="mt-1 text-sm text-green-600">
+                      {((value / cumulativeTotals.belanja52.q4) * 100).toFixed(1)}% dari total
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
