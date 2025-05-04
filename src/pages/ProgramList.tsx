@@ -18,20 +18,40 @@ const ProgramList: React.FC = () => {
   const [copiedProgram, setCopiedProgram] = useState<typeof formData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRoCode, setSelectedRoCode] = useState('');
+  const [selectedSection, setSelectedSection] = useState('all');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    programId: string | null;
+    programTitle: string;
+  }>({
+    isOpen: false,
+    programId: null,
+    programTitle: ''
+  });
   const itemsPerPage = 10;
 
-  // RO Code lists - sorted
-  const dukmanRoCodes = ['2886.EBA.956', '2886.EBA.962', '2886.EBA.994', '2886.EBD.955'].sort();
-  const ppisRoCodes = [
-    '2896.BMA.004', '2897.BMA.004', '2897.QDB.003', '2898.BMA.007',
-    '2899.BMA.006', '2900.BMA.005', '2901.CAN.004', '2902.BMA.004',
-    '2902.BMA.006', '2903.BMA.009', '2904.BMA.006', '2905.BMA.004',
-    '2905.BMA.006', '2906.BMA.003', '2906.BMA.006', '2907.BMA.006',
-    '2907.BMA.008', '2908.BMA.004', '2908.BMA.009', '2909.BMA.005',
-    '2910.BMA.007', '2910.BMA.008'
-  ].sort();
+  // RO Code groupings for PPIS
+  const ppisGroups = {
+    IPDS: ['2896.BMA.004', '2897.BMA.004', '2897.QDB.003', '2900.BMA.005', '2901.CAN.004'],
+    NERACA: ['2898.BMA.007', '2899.BMA.006'],
+    DISTRIBUSI: ['2902.BMA.004', '2902.BMA.006', '2903.BMA.009', '2908.BMA.004', '2908.BMA.009'],
+    SOSIAL: ['2905.BMA.004', '2905.BMA.006', '2906.BMA.003', '2906.BMA.006', '2907.BMA.006', '2907.BMA.008'],
+    PRODUKSI: ['2904.BMA.006', '2909.BMA.005', '2910.BMA.007', '2910.BMA.008']
+  };
 
-  // Get component codes based on program and RO code - sorted
+  const dukmanRoCodes = ['2886.EBA.956', '2886.EBA.962', '2886.EBA.994', '2886.EBD.955'].sort();
+  const ppisRoCodes = Object.values(ppisGroups).flat().sort();
+
+  // Get group name for a PPIS RO code
+  const getPPISGroup = (roCode: string): string => {
+    for (const [group, codes] of Object.entries(ppisGroups)) {
+      if (codes.includes(roCode)) {
+        return group;
+      }
+    }
+    return '';
+  };
+
   const getComponentCodes = (program: 'Dukman' | 'PPIS', roCode: string) => {
     if (program === 'Dukman') {
       if (roCode === '2886.EBA.994') {
@@ -42,7 +62,6 @@ const ProgramList: React.FC = () => {
     return ['005', '051', '052', '053', '054', '056', '506', '516', '519'].sort();
   };
 
-  // Component title mappings
   const dukmanComponentTitles: Record<string, string> = {
     '051': 'Tanpa Komponen',
     '001': 'Gaji dan Tunjangan',
@@ -61,23 +80,30 @@ const ProgramList: React.FC = () => {
     '519': 'Penyusunan Bahan Publisitas'
   };
 
-  // Filter and sort budget codes by program, RO code, and component code
   const filteredBudgetCodes = budgetCodes
     .filter(code => {
       const matchesProgram = code.program === activeTab;
       const matchesRoCode = !selectedRoCode || code.roCode === selectedRoCode;
-      return matchesProgram && matchesRoCode;
+      const matchesSection = selectedSection === 'all' || getPPISGroup(code.roCode) === selectedSection;
+      return matchesProgram && matchesRoCode && (activeTab === 'Dukman' || matchesSection);
     })
     .sort((a, b) => {
-      // First sort by RO code
+      if (activeTab === 'PPIS') {
+        // First sort by group
+        const groupA = getPPISGroup(a.roCode);
+        const groupB = getPPISGroup(b.roCode);
+        const groupCompare = groupA.localeCompare(groupB);
+        if (groupCompare !== 0) return groupCompare;
+      }
+      
+      // Then sort by RO code
       const roCodeCompare = a.roCode.localeCompare(b.roCode);
       if (roCodeCompare !== 0) return roCodeCompare;
       
-      // Then sort by component code
+      // Finally sort by component code
       return a.componentCode.localeCompare(b.componentCode);
     });
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredBudgetCodes.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -98,6 +124,7 @@ const ProgramList: React.FC = () => {
         componentCode: '',
         componentTitle: ''
       });
+      setSelectedSection('all');
     } else if (name === 'roCode') {
       setFormData(prev => ({
         ...prev,
@@ -147,6 +174,25 @@ const ProgramList: React.FC = () => {
     setCopiedProgram(programData);
   };
 
+  const handleDeleteClick = (code: typeof budgetCodes[0]) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      programId: code.id,
+      programTitle: code.roTitle
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirmation.programId) {
+      await deleteBudgetCode(deleteConfirmation.programId);
+      setDeleteConfirmation({
+        isOpen: false,
+        programId: null,
+        programTitle: ''
+      });
+    }
+  };
+
   const handlePaste = () => {
     if (copiedProgram) {
       setFormData(copiedProgram);
@@ -183,13 +229,23 @@ const ProgramList: React.FC = () => {
     }
   };
 
-  // Get current component codes based on form state
   const currentComponentCodes = getComponentCodes(formData.program, formData.roCode);
 
-  // Reset to first page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, selectedRoCode]);
+  }, [activeTab, selectedRoCode, selectedSection]);
+
+  // Group PPIS codes by section
+  const groupedPPISCodes = activeTab === 'PPIS' 
+    ? currentItems.reduce((acc, code) => {
+        const group = getPPISGroup(code.roCode);
+        if (!acc[group]) {
+          acc[group] = [];
+        }
+        acc[group].push(code);
+        return acc;
+      }, {} as Record<string, typeof currentItems>)
+    : {};
 
   return (
     <div className="space-y-6">
@@ -215,7 +271,6 @@ const ProgramList: React.FC = () => {
         </div>
       </div>
 
-      {/* Program Tabs and Filters */}
       <div className="border-b border-gray-200">
         <div className="flex justify-between items-center">
           <nav className="-mb-px flex space-x-8">
@@ -223,6 +278,7 @@ const ProgramList: React.FC = () => {
               onClick={() => {
                 setActiveTab('Dukman');
                 setSelectedRoCode('');
+                setSelectedSection('all');
               }}
               className={`${
                 activeTab === 'Dukman'
@@ -236,6 +292,7 @@ const ProgramList: React.FC = () => {
               onClick={() => {
                 setActiveTab('PPIS');
                 setSelectedRoCode('');
+                setSelectedSection('all');
               }}
               className={`${
                 activeTab === 'PPIS'
@@ -246,7 +303,19 @@ const ProgramList: React.FC = () => {
               PPIS
             </button>
           </nav>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
+            {activeTab === 'PPIS' && (
+              <select
+                value={selectedSection}
+                onChange={(e) => setSelectedSection(e.target.value)}
+                className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="all">Semua Seksi</option>
+                {Object.keys(ppisGroups).map(group => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+            )}
             <select
               value={selectedRoCode}
               onChange={(e) => setSelectedRoCode(e.target.value)}
@@ -261,57 +330,111 @@ const ProgramList: React.FC = () => {
         </div>
       </div>
 
-      {/* Program Content */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
           {currentItems.length > 0 ? (
-            currentItems.map((code) => (
-              <li key={code.id}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold">{code.roCode?.substring(0, 2) || '--'}</span>
+            activeTab === 'PPIS' ? (
+              Object.entries(groupedPPISCodes).map(([group, codes]) => (
+                <li key={group} className="divide-y divide-gray-100">
+                  <div className="bg-gray-50 px-4 py-3">
+                    <h3 className="text-sm font-medium text-gray-900">{group}</h3>
+                  </div>
+                  {codes.map((code) => (
+                    <div key={code.id} className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-600 font-semibold">{code.roCode?.substring(0, 2) || '--'}</span>
+                          </div>
+                          <div className="ml-4">
+                            <p className="text-sm font-medium text-gray-900">{code.roTitle}</p>
+                            <p className="text-sm text-gray-500">
+                              Kode RO: {code.roCode} | Kode Komponen: {code.componentCode}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleCopy(code)}
+                            className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                            title="Salin Program"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(code)}
+                            className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            title="Edit Program"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(code)}
+                            className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            title="Hapus Program"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-900">{code.roTitle}</p>
+                      <div className="mt-2">
                         <p className="text-sm text-gray-500">
-                          Kode RO: {code.roCode} | Kode Komponen: {code.componentCode}
+                          Judul Komponen: {code.componentTitle}
                         </p>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleCopy(code)}
-                        className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                        title="Salin Program"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(code)}
-                        className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        title="Edit Program"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteBudgetCode(code.id)}
-                        className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        title="Hapus Program"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                  ))}
+                </li>
+              ))
+            ) : (
+              currentItems.map((code) => (
+                <li key={code.id}>
+                  <div className="px-4 py-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold">{code.roCode?.substring(0, 2) || '--'}</span>
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-900">{code.roTitle}</p>
+                          <p className="text-sm text-gray-500">
+                            Kode RO: {code.roCode} | Kode Komponen: {code.componentCode}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleCopy(code)}
+                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                          title="Salin Program"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(code)}
+                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          title="Edit Program"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(code)}
+                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          title="Hapus Program"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Judul Komponen: {code.componentTitle}
+                      </p>
                     </div>
                   </div>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Judul Komponen: {code.componentTitle}
-                    </p>
-                  </div>
-                </div>
-              </li>
-            ))
+                </li>
+              ))
+            )
           ) : (
             <li className="px-4 py-6 text-center text-gray-500">
               Tidak ada data program {activeTab} yang tersedia.
@@ -319,7 +442,6 @@ const ProgramList: React.FC = () => {
           )}
         </ul>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
@@ -390,7 +512,6 @@ const ProgramList: React.FC = () => {
         )}
       </div>
 
-      {/* Add/Edit Program Modal */}
       {isModalOpen && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -437,8 +558,12 @@ const ProgramList: React.FC = () => {
                           ? dukmanRoCodes.map(code => (
                               <option key={code} value={code}>{code}</option>
                             ))
-                          : ppisRoCodes.map(code => (
-                              <option key={code} value={code}>{code}</option>
+                          : Object.entries(ppisGroups).map(([group, codes]) => (
+                              <optgroup key={group} label={group}>
+                                {codes.map(code => (
+                                  <option key={code} value={code}>{code}</option>
+                                ))}
+                              </optgroup>
                             ))
                         }
                       </select>
@@ -510,6 +635,49 @@ const ProgramList: React.FC = () => {
                     </div>
                   </form>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmation.isOpen && (
+        <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+              <div className="sm:flex sm:items-start">
+                <div className="mx-auto flex-shrink-0  flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Hapus Program
+                  </h3>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      Apakah Anda yakin ingin menghapus program "{deleteConfirmation.programTitle}"? 
+                      Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Hapus
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmation({ isOpen: false, programId: null, programTitle: '' })}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
+                >
+                  Batal
+                </button>
               </div>
             </div>
           </div>

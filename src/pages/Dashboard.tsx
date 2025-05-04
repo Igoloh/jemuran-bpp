@@ -8,6 +8,15 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const Dashboard: React.FC = () => {
   const { activityDetails, budgetCodes } = useAppContext();
 
+  // PPIS section groupings
+  const ppisGroups = {
+    IPDS: ['2896.BMA.004', '2897.BMA.004', '2897.QDB.003', '2900.BMA.005', '2901.CAN.004'],
+    NERACA: ['2898.BMA.007', '2899.BMA.006'],
+    DISTRIBUSI: ['2902.BMA.004', '2902.BMA.006', '2903.BMA.009', '2908.BMA.004', '2908.BMA.009'],
+    SOSIAL: ['2905.BMA.004', '2905.BMA.006', '2906.BMA.003', '2906.BMA.006', '2907.BMA.006', '2907.BMA.008'],
+    PRODUKSI: ['2904.BMA.006', '2909.BMA.005', '2910.BMA.007', '2910.BMA.008']
+  };
+
   // Calculate summary statistics using volume * value
   const totalOriginalValue = activityDetails.reduce((sum, item) => sum + (item.volumeOriginal * item.valueOriginal), 0);
   const totalRevisedValue = activityDetails.reduce((sum, item) => sum + (item.volumeRevised * item.valueRevised), 0);
@@ -62,6 +71,57 @@ const Dashboard: React.FC = () => {
     ],
   };
 
+  // Calculate detailed grouping data
+  const detailedGroupTotals = budgetCodes.reduce((acc, code) => {
+    const details = activityDetails.filter(detail => detail.budgetCodeId === code.id);
+    const total = details.reduce((sum, detail) => sum + (detail.volumeRevised * detail.valueRevised), 0);
+
+    if (code.program === 'PPIS') {
+      // Find which PPIS group this code belongs to
+      for (const [group, codes] of Object.entries(ppisGroups)) {
+        if (codes.includes(code.roCode)) {
+          acc[group] = (acc[group] || 0) + total;
+          break;
+        }
+      }
+    } else {
+      // Dukman grouping based on component code
+      const group = code.componentCode === '001' ? 'BELANJA PEGAWAI - 51' : 'BELANJA BARANG - 52';
+      acc[group] = (acc[group] || 0) + total;
+    }
+
+    return acc;
+  }, {} as Record<string, number>);
+
+  const detailedGroupData = {
+    labels: [
+      'IPDS', 'NERACA', 'DISTRIBUSI', 'SOSIAL', 'PRODUKSI',
+      'BELANJA PEGAWAI - 51', 'BELANJA BARANG - 52'
+    ],
+    datasets: [
+      {
+        data: [
+          detailedGroupTotals['IPDS'] || 0,
+          detailedGroupTotals['NERACA'] || 0,
+          detailedGroupTotals['DISTRIBUSI'] || 0,
+          detailedGroupTotals['SOSIAL'] || 0,
+          detailedGroupTotals['PRODUKSI'] || 0,
+          detailedGroupTotals['BELANJA PEGAWAI - 51'] || 0,
+          detailedGroupTotals['BELANJA BARANG - 52'] || 0
+        ],
+        backgroundColor: [
+          '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
+          '#6366f1', '#14b8a6'
+        ],
+        borderColor: [
+          '#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777',
+          '#4f46e5', '#0d9488'
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
   // Calculate percentages for quarterly withdrawals
   const totalWithdrawal = Object.values(quarterlyTotals).reduce((sum, value) => sum + value, 0);
   const quarterlyPercentages = {
@@ -109,7 +169,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Program Distribution Chart */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Distribusi Program</h2>
@@ -161,6 +221,37 @@ const Dashboard: React.FC = () => {
                           const value = context.raw as number;
                           const percentage = ((value / totalWithdrawal) * 100).toFixed(1);
                           return `${formatCurrency(value)} (${percentage}%)`;
+                        },
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Grouping Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Distribusi per Seksi dan Jenis Belanja</h2>
+          <div className="h-64 flex justify-center">
+            <div className="w-96">
+              <Doughnut 
+                data={detailedGroupData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: (context) => {
+                          const value = context.raw as number;
+                          const total = Object.values(detailedGroupTotals).reduce((sum, v) => sum + v, 0);
+                          const percentage = total ? ((value / total) * 100).toFixed(1) : '0';
+                          return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
                         },
                       },
                     },
