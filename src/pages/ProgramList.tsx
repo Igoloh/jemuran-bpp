@@ -16,7 +16,6 @@ const ProgramList: React.FC = () => {
     componentTitle: ''
   });
   const [copiedProgram, setCopiedProgram] = useState<typeof formData | null>(null);
-  const [filterRoCode, setFilterRoCode] = useState('');
 
   // RO Code lists - sorted
   const dukmanRoCodes = ['2886.EBA.956', '2886.EBA.962', '2886.EBA.994', '2886.EBD.955'].sort();
@@ -28,9 +27,6 @@ const ProgramList: React.FC = () => {
     '2907.BMA.008', '2908.BMA.004', '2908.BMA.009', '2909.BMA.005',
     '2910.BMA.007', '2910.BMA.008'
   ].sort();
-
-  // Get unique RO codes for the current program
-  const currentRoCodes = activeTab === 'Dukman' ? dukmanRoCodes : ppisRoCodes;
 
   // Get component codes based on program and RO code - sorted
   const getComponentCodes = (program: 'Dukman' | 'PPIS', roCode: string) => {
@@ -60,11 +56,7 @@ const ProgramList: React.FC = () => {
 
   // Filter and sort budget codes by program, RO code, and component code
   const filteredBudgetCodes = budgetCodes
-    .filter(code => {
-      const matchesProgram = code.program === activeTab;
-      const matchesRoCode = !filterRoCode || code.roCode === filterRoCode;
-      return matchesProgram && matchesRoCode;
-    })
+    .filter(code => code.program === activeTab)
     .sort((a, b) => {
       // First sort by RO code
       const roCodeCompare = a.roCode.localeCompare(b.roCode);
@@ -173,12 +165,6 @@ const ProgramList: React.FC = () => {
   // Get current component codes based on form state
   const currentComponentCodes = getComponentCodes(formData.program, formData.roCode);
 
-  // Handle program tab change
-  const handleTabChange = (program: 'Dukman' | 'PPIS') => {
-    setActiveTab(program);
-    setFilterRoCode(''); // Reset RO code filter when changing programs
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -203,44 +189,30 @@ const ProgramList: React.FC = () => {
         </div>
       </div>
 
-      {/* Program Tabs and Filter */}
+      {/* Program Tabs */}
       <div className="border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => handleTabChange('Dukman')}
-              className={`${
-                activeTab === 'Dukman'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Dukman
-            </button>
-            <button
-              onClick={() => handleTabChange('PPIS')}
-              className={`${
-                activeTab === 'PPIS'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              PPIS
-            </button>
-          </nav>
-          <div className="flex items-center space-x-4">
-            <select
-              value={filterRoCode}
-              onChange={(e) => setFilterRoCode(e.target.value)}
-              className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="">Semua Kode RO</option>
-              {currentRoCodes.map(code => (
-                <option key={code} value={code}>{code}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('Dukman')}
+            className={`${
+              activeTab === 'Dukman'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            Dukman
+          </button>
+          <button
+            onClick={() => setActiveTab('PPIS')}
+            className={`${
+              activeTab === 'PPIS'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            PPIS
+          </button>
+        </nav>
       </div>
 
       {/* Program Content */}
