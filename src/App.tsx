@@ -15,8 +15,10 @@ const RouteTracker: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Store current path in localStorage whenever it changes
-    localStorage.setItem('lastPath', location.pathname);
+    // Don't store modal states in lastPath
+    if (!location.pathname.includes('modal')) {
+      localStorage.setItem('lastPath', location.pathname);
+    }
   }, [location]);
 
   return null;
@@ -26,15 +28,17 @@ const RouteTracker: React.FC = () => {
 const InitialRedirect: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     if (isAuthenticated) {
       const lastPath = localStorage.getItem('lastPath');
-      if (lastPath && lastPath !== '/login') {
+      // Only redirect if we're at the root path and there's a saved path
+      if (location.pathname === '/' && lastPath && lastPath !== '/login') {
         navigate(lastPath);
       }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname]);
 
   return null;
 };
