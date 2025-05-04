@@ -16,9 +16,9 @@ const Login: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      window.location.href = from; // Use window.location.href for full page refresh
     }
-  }, [isAuthenticated, isLoading, navigate, location]);
+  }, [isAuthenticated, isLoading, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +37,6 @@ const Login: React.FC = () => {
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Username atau password salah');
-    } finally {
       setIsSubmitting(false);
     }
   };

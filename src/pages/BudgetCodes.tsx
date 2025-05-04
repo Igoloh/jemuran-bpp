@@ -61,6 +61,16 @@ const BudgetCodes: React.FC = () => {
     }).format(value);
   };
 
+  // Format number with thousand separators
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('id-ID').format(value);
+  };
+
+  // Parse formatted number back to numeric value
+  const parseFormattedNumber = (value: string) => {
+    return parseInt(value.replace(/\D/g, '')) || 0;
+  };
+
   const handleWithdrawalEdit = (code: typeof budgetCodes[0]) => {
     setEditingWithdrawal(code.id);
     setWithdrawalForm(code.quarterly_withdrawal || { q1: 0, q2: 0, q3: 0, q4: 0 });
@@ -81,10 +91,11 @@ const BudgetCodes: React.FC = () => {
     setWithdrawalError(null);
   };
 
-  const handleWithdrawalChange = (quarter: keyof typeof withdrawalForm, value: number) => {
+  const handleWithdrawalChange = (quarter: keyof typeof withdrawalForm, value: string) => {
+    const numericValue = parseFormattedNumber(value);
     setWithdrawalForm(prev => ({
       ...prev,
-      [quarter]: value
+      [quarter]: numericValue
     }));
     setWithdrawalError(null);
   };
@@ -233,12 +244,11 @@ const BudgetCodes: React.FC = () => {
                                     TW {quarter}
                                   </label>
                                   <input
-                                    type="number"
-                                    min="0"
-                                    value={withdrawal[`q${index + 1}` as keyof typeof withdrawal]}
+                                    type="text"
+                                    value={formatNumber(withdrawal[`q${index + 1}` as keyof typeof withdrawal])}
                                     onChange={(e) => handleWithdrawalChange(
                                       `q${index + 1}` as keyof typeof withdrawal,
-                                      Number(e.target.value)
+                                      e.target.value
                                     )}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                   />

@@ -115,10 +115,10 @@ const DetailEntry: React.FC = () => {
     activityTitle: '',
     details: '',
     unit: '',
-    volumeOriginal: 1,
-    volumeRevised: 1,
-    valueOriginal: 1,
-    valueRevised: 1
+    volumeOriginal: 0,
+    volumeRevised: 0,
+    valueOriginal: 0,
+    valueRevised: 0
   });
 
   // Format number with thousand separators
@@ -128,7 +128,7 @@ const DetailEntry: React.FC = () => {
 
   // Parse formatted number back to numeric value
   const parseFormattedNumber = (value: string) => {
-    return parseInt(value.replace(/\D/g, '')) || 1;
+    return parseInt(value.replace(/\D/g, '')) || 0;
   };
 
   // Handle form input changes
@@ -150,8 +150,8 @@ const DetailEntry: React.FC = () => {
         [name]: numericValue
       }));
     } else if (['volumeOriginal', 'volumeRevised'].includes(name)) {
-      // For volume fields, ensure minimum value of 1
-      const numValue = Math.max(1, parseFloat(value) || 1);
+      // For volume fields, ensure minimum value of 0
+      const numValue = Math.max(0, parseFloat(value) || 0);
       setFormData(prev => ({
         ...prev,
         [name]: numValue
@@ -190,10 +190,10 @@ const DetailEntry: React.FC = () => {
       activityTitle: '',
       details: '',
       unit: '',
-      volumeOriginal: 1,
-      volumeRevised: 1,
-      valueOriginal: 1,
-      valueRevised: 1
+      volumeOriginal: 0,
+      volumeRevised: 0,
+      valueOriginal: 0,
+      valueRevised: 0
     });
     setIsFormOpen(false);
     setIsEditing(false);
@@ -293,6 +293,7 @@ const DetailEntry: React.FC = () => {
               onClick={handlePaste}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
+              
               <ClipboardPaste className="h-4 w-4 mr-2" />
               Tempel Kegiatan
             </button>
@@ -421,67 +422,73 @@ const DetailEntry: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="sm:col-span-2">
-                  <label htmlFor="volumeOriginal" className="block text-sm font-medium text-gray-700">
-                    Volume Semula
-                  </label>
-                  <input
-                    type="number"
-                    name="volumeOriginal"
-                    id="volumeOriginal"
-                    min="1"
-                    value={formData.volumeOriginal}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div className="sm:col-span-2">
-                  <label htmlFor="volumeRevised" className="block text-sm font-medium text-gray-700">
-                    Volume Menjadi
-                  </label>
-                  <input
-                    type="number"
-                    name="volumeRevised"
-                    id="volumeRevised"
-                    min="1"
-                    value={formData.volumeRevised}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div className="sm:col-span-3">
-                  <label htmlFor="valueOriginal" className="block text-sm font-medium text-gray-700">
-                    Nilai Semula
-                  </label>
-                  <input
-                    type="text"
-                    name="valueOriginal"
-                    id="valueOriginal"
-                    value={formatNumber(formData.valueOriginal)}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  />
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="volumeOriginal" className="block text-sm font-medium text-gray-700">
+                        Volume Semula
+                      </label>
+                      <input
+                        type="number"
+                        name="volumeOriginal"
+                        id="volumeOriginal"
+                        min="0"
+                        value={formData.volumeOriginal}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="volumeRevised" className="block text-sm font-medium text-gray-700">
+                        Volume Menjadi
+                      </label>
+                      <input
+                        type="number"
+                        name="volumeRevised"
+                        id="volumeRevised"
+                        min="0"
+                        value={formData.volumeRevised}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="sm:col-span-3">
-                  <label htmlFor="valueRevised" className="block text-sm font-medium text-gray-700">
-                    Nilai Menjadi
-                  </label>
-                  <input
-                    type="text"
-                    name="valueRevised"
-                    id="valueRevised"
-                    value={formatNumber(formData.valueRevised)}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                  />
+                <div className="sm:col-span-2">
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="valueOriginal" className="block text-sm font-medium text-gray-700">
+                        Nilai Semula
+                      </label>
+                      <input
+                        type="text"
+                        name="valueOriginal"
+                        id="valueOriginal"
+                        value={formatNumber(formData.valueOriginal)}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="valueRevised" className="block text-sm font-medium text-gray-700">
+                        Nilai Menjadi
+                      </label>
+                      <input
+                        type="text"
+                        name="valueRevised"
+                        id="valueRevised"
+                        value={formatNumber(formData.valueRevised)}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -611,7 +618,6 @@ const DetailEntry: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            
                             <div className="flex justify-end space-x-2">
                               <button
                                 onClick={() => handleCopy(activity)}
