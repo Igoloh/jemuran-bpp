@@ -39,7 +39,7 @@ const ProgramList: React.FC = () => {
       }
       return ['051'];
     }
-    return ['005', '051', '052', '053', '054', '056'].sort();
+    return ['005', '051', '052', '053', '054', '056', '506', '516', '519'].sort();
   };
 
   // Component title mappings
@@ -55,7 +55,10 @@ const ProgramList: React.FC = () => {
     '052': 'Pengumpulan Data',
     '053': 'Pengolahan',
     '054': 'Analisis, Diseminasi dan Evaluasi',
-    '056': 'Pengembangan Infrastruktur dan Layanan Teknologi Informasi dan Komunikasi'
+    '056': 'Pengembangan Infrastruktur dan Layanan Teknologi Informasi dan Komunikasi',
+    '506': 'Pemutakhiran Kerangka Geospasial dan Muatan Wilkerstat',
+    '516': 'Updating Direktori Usaha/Perusahaan Ekonomi Lanjutan',
+    '519': 'Penyusunan Bahan Publisitas'
   };
 
   // Filter and sort budget codes by program, RO code, and component code
