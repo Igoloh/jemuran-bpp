@@ -39,7 +39,7 @@ const ProgramList: React.FC = () => {
       }
       return ['051'];
     }
-    return ['005', '051', '052', '053', '054'].sort();
+    return ['005', '051', '052', '053', '054', '056'].sort();
   };
 
   // Component title mappings
@@ -54,7 +54,8 @@ const ProgramList: React.FC = () => {
     '051': 'Persiapan',
     '052': 'Pengumpulan Data',
     '053': 'Pengolahan',
-    '054': 'Analisis, Diseminasi dan Evaluasi'
+    '054': 'Analisis, Diseminasi dan Evaluasi',
+    '056': 'Pengembangan Infrastruktur dan Layanan Teknologi Informasi dan Komunikasi'
   };
 
   // Filter and sort budget codes by program, RO code, and component code
