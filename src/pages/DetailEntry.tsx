@@ -762,5 +762,3 @@ const DetailEntry: React.FC = () => {
 };
 
 export default DetailEntry;
-
-export default DetailEntry
