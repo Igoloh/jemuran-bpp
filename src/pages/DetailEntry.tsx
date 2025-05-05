@@ -2,12 +2,38 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { ArrowLeft, Plus, Edit, Trash2, Copy, ClipboardPaste, Save } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const DetailEntry: React.FC = () => {
+  const { userRole, userSection } = useAuth();
+  const isAdmin = userRole === 'Admin';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { budgetCodes, activityDetails, addActivityDetail, updateActivityDetail, deleteActivityDetail } = useAppContext();
-  
+
+  // PPIS section groupings with RO codes
+  const ppisGroups = {
+    IPDS: ['2896.BMA.004', '2897.BMA.004', '2897.QDB.003', '2900.BMA.005', '2901.CAN.004'],
+    NERACA: ['2898.BMA.007', '2899.BMA.006'],
+    DISTRIBUSI: ['2902.BMA.004', '2902.BMA.006', '2903.BMA.009', '2908.BMA.004', '2908.BMA.009'],
+    SOSIAL: ['2905.BMA.004', '2905.BMA.006', '2906.BMA.003', '2906.BMA.006', '2907.BMA.006', '2907.BMA.008'],
+    PRODUKSI: ['2904.BMA.006', '2909.BMA.005', '2910.BMA.007', '2910.BMA.008']
+  };
+
+  // Find the budget code
+  const budgetCode = budgetCodes.find(code => code.id === id);
+
+  // Check if user has access to this RO code
+  const hasAccess = React.useMemo(() => {
+    if (!budgetCode || !userSection) return isAdmin;
+    
+    if (budgetCode.program === 'PPIS') {
+      return isAdmin || ppisGroups[userSection]?.includes(budgetCode.roCode);
+    }
+    
+    return isAdmin;
+  }, [budgetCode, isAdmin, userSection]);
+
   // Activity code mappings - sorted
   const activityCodes = {
     PPIS: ['521811', '524113', '522151', '524114', '521213', '521211', '522119', '521219'].sort(),
@@ -64,9 +90,6 @@ const DetailEntry: React.FC = () => {
   // Add state for copied activity
   const [copiedActivity, setCopiedActivity] = useState<Partial<ActivityDetail> | null>(null);
 
-  // Find the budget code
-  const budgetCode = budgetCodes.find(code => code.id === id);
-  
   // Get available activity codes based on program and component
   const getAvailableActivityCodes = () => {
     if (!budgetCode) return [];
@@ -162,22 +185,24 @@ const DetailEntry: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
+    // Only allow admin to change original values
+    if (!isAdmin && (name === 'volumeOriginal' || name === 'valueOriginal')) {
+      return;
+    }
+    
     if (name === 'activityCode') {
-      // Auto-set activity title based on code
       setFormData(prev => ({
         ...prev,
         activityCode: value,
         activityTitle: activityTitles[value] || ''
       }));
     } else if (['valueOriginal', 'valueRevised'].includes(name)) {
-      // For value fields, parse the formatted number
       const numericValue = parseFormattedNumber(value);
       setFormData(prev => ({
         ...prev,
         [name]: numericValue
       }));
     } else if (['volumeOriginal', 'volumeRevised'].includes(name)) {
-      // For volume fields, ensure minimum value of 0
       const numValue = Math.max(0, parseFloat(value) || 0);
       setFormData(prev => ({
         ...prev,
@@ -301,6 +326,21 @@ const DetailEntry: React.FC = () => {
     return (
       <div className="text-center py-10">
         <p className="text-lg text-gray-600">Kode anggaran tidak ditemukan.</p>
+        <button
+          onClick={() => navigate('/budget-codes')}
+          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Kembali ke Daftar Kode Anggaran
+        </button>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-lg text-gray-600">Anda tidak memiliki akses ke halaman ini.</p>
         <button
           onClick={() => navigate('/budget-codes')}
           className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -474,7 +514,10 @@ const DetailEntry: React.FC = () => {
                         value={formData.volumeOriginal}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        disabled={!isAdmin}
+                        className={`mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
+                          !isAdmin ? 'bg-gray-100' : ''
+                        }`}
                       />
                     </div>
                     <div>
@@ -508,7 +551,10 @@ const DetailEntry: React.FC = () => {
                         value={formatNumber(formData.valueOriginal)}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        disabled={!isAdmin}
+                        className={`mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${
+                          !isAdmin ? 'bg-gray-100' : ''
+                        }`}
                       />
                     </div>
                     <div>
@@ -716,3 +762,5 @@ const DetailEntry: React.FC = () => {
 };
 
 export default DetailEntry;
+
+export default DetailEntry

@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Link } from 'react-router-dom';
 import { FileText, Trash2, ChevronLeft, ChevronRight, Plus, Copy, Edit, ClipboardPaste } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const ProgramList: React.FC = () => {
+  const { userRole } = useAuth();
+  const isAdmin = userRole === 'Admin';
   const { budgetCodes, deleteBudgetCode, addBudgetCode, updateBudgetCode } = useAppContext();
   const [activeTab, setActiveTab] = useState<'Dukman' | 'PPIS'>('Dukman');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -280,7 +283,7 @@ const ProgramList: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Program</h1>
         <div className="flex space-x-2">
-          {copiedProgram && (
+          {copiedProgram && isAdmin && (
             <button
               onClick={handlePaste}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -289,13 +292,15 @@ const ProgramList: React.FC = () => {
               Tempel Program
             </button>
           )}
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Tambah Program
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Program
+            </button>
+          )}
         </div>
       </div>
 
@@ -394,27 +399,31 @@ const ProgramList: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleCopy(code)}
-                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                          title="Salin Program"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(code)}
-                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          title="Edit Program"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(code)}
-                          className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                          title="Hapus Program"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => handleCopy(code)}
+                              className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                              title="Salin Program"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(code)}
+                              className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              title="Edit Program"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(code)}
+                              className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              title="Hapus Program"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="mt-2">
@@ -637,9 +646,9 @@ const ProgramList: React.FC = () => {
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm: max-w-lg sm:w-full sm:p-6">
-              <div className="sm:flex sm:items-start">
-                <div className="mx-auto flex-shrink-0  flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+              <div className="sm:flex sm: items-start">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
                   <Trash2 className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">

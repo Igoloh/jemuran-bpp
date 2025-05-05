@@ -5,6 +5,7 @@ export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<'Admin' | 'User' | null>(null);
+  const [userSection, setUserSection] = useState<'IPDS' | 'NERACA' | 'DISTRIBUSI' | 'SOSIAL' | 'PRODUKSI' | null>(null);
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export const useAuth = () => {
           console.error('Error checking auth status:', error);
           setIsAuthenticated(false);
           setUserRole(null);
+          setUserSection(null);
           return;
         }
         
@@ -55,18 +57,29 @@ export const useAuth = () => {
         
         if (session?.user.email) {
           const username = session.user.email.split('@')[0].toLowerCase();
-          setUserRole(username === 'ppk.8104' ? 'Admin' : 'User');
+          
+          if (username === 'ppk.8104') {
+            setUserRole('Admin');
+            setUserSection(null);
+          } else {
+            setUserRole('User');
+            const section = username.split('.')[0].toUpperCase();
+            setUserSection(section as 'IPDS' | 'NERACA' | 'DISTRIBUSI' | 'SOSIAL' | 'PRODUKSI');
+          }
+
           if (isAuth) {
             resetInactivityTimer();
           }
         } else {
           setUserRole(null);
+          setUserSection(null);
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
         if (mounted) {
           setIsAuthenticated(false);
           setUserRole(null);
+          setUserSection(null);
         }
       } finally {
         if (mounted) {
@@ -84,12 +97,21 @@ export const useAuth = () => {
         setIsAuthenticated(true);
         if (session?.user.email) {
           const username = session.user.email.split('@')[0].toLowerCase();
-          setUserRole(username === 'ppk.8104' ? 'Admin' : 'User');
+          
+          if (username === 'ppk.8104') {
+            setUserRole('Admin');
+            setUserSection(null);
+          } else {
+            setUserRole('User');
+            const section = username.split('.')[0].toUpperCase();
+            setUserSection(section as 'IPDS' | 'NERACA' | 'DISTRIBUSI' | 'SOSIAL' | 'PRODUKSI');
+          }
         }
         resetInactivityTimer();
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUserRole(null);
+        setUserSection(null);
         clearTimeout(inactivityTimeout);
       }
       
@@ -108,5 +130,5 @@ export const useAuth = () => {
     };
   }, [isAuthenticated]);
 
-  return { isAuthenticated, isLoading, userRole };
+  return { isAuthenticated, isLoading, userRole, userSection };
 };
