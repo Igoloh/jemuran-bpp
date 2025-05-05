@@ -13,8 +13,8 @@ const DetailEntry: React.FC = () => {
     PPIS: ['521811', '524113', '522151', '524114', '521213', '521211', '522119', '521219'].sort(),
     Dukman: {
       '001': ['511111', '511119', '511121', '511122', '511123', '511124', '511125', '511126', '511129', '511151', '512211', '512411'].sort(),
-      '051': ['521111', '521115', '521252', '521811', '522111', '522191', '523111', '523121', '524111'].sort(),
-      '002': ['521111', '521115', '521252', '521811', '522111', '522191', '523111', '523121', '524111'].sort() // Same as '051'
+      '051': ['521111', '521115', '521211', '521252', '521811', '522111', '522191', '523111', '523121', '524111'].sort(),
+      '002': ['521111', '521115', '521252', '521811', '522111', '522191', '523111', '523121', '524111'].sort()
     }
   };
 
@@ -52,10 +52,11 @@ const DetailEntry: React.FC = () => {
 
   // Unit mappings based on program and component - sorted
   const unitOptions = {
-    PPIS: ['BS', 'Dok', 'KG', 'LMBR', 'O-B', 'O-J', 'O-JP', 'O-K', 'O-P', 'Paket', 'RESP', 'Ruta', 'SGMEN', 'Set'],
+    PPIS: ['BS', 'Dok', 'KG', 'LMBR', 'O-B', 'O-H', 'O-J', 'O-JP', 'O-K', 'O-P', 'Paket', 'RESP', 'Ruta', 'SGMEN', 'Set'],
     Dukman: {
       '001': ['BLN', 'THN'].sort(),
-      '002': ['M2/THN', 'O-B', 'O-P', 'Paket', 'THN', 'U/THN', 'Unit'].sort(), // Same as 'other'
+      '002': ['M2/THN', 'O-B', 'O-P', 'Paket', 'THN', 'U/THN', 'Unit'].sort(),
+      '051': ['M2/THN', 'O-B', 'O-K', 'O-P', 'Paket', 'THN', 'U/THN', 'Unit'].sort(),
       other: ['M2/THN', 'O-B', 'O-P', 'Paket', 'THN', 'U/THN', 'Unit'].sort()
     }
   };
@@ -88,7 +89,9 @@ const DetailEntry: React.FC = () => {
         ? unitOptions.Dukman['001']
         : budgetCode.componentCode === '002'
           ? unitOptions.Dukman['002']
-          : unitOptions.Dukman.other;
+          : budgetCode.componentCode === '051'
+            ? unitOptions.Dukman['051']
+            : unitOptions.Dukman.other;
     }
   };
 
@@ -105,6 +108,23 @@ const DetailEntry: React.FC = () => {
 
   // Sort grouped details by activity code
   const sortedActivityCodes = Object.keys(groupedDetails).sort();
+
+  // Calculate cumulative totals for each activity code
+  const activityCodeTotals = sortedActivityCodes.reduce((totals, code) => {
+    const activities = groupedDetails[code];
+    const codeOriginalTotal = activities.reduce((sum, activity) => 
+      sum + (activity.volumeOriginal * activity.valueOriginal), 0);
+    const codeRevisedTotal = activities.reduce((sum, activity) => 
+      sum + (activity.volumeRevised * activity.valueRevised), 0);
+    
+    totals[code] = {
+      original: codeOriginalTotal,
+      revised: codeRevisedTotal,
+      difference: codeRevisedTotal - codeOriginalTotal
+    };
+    
+    return totals;
+  }, {} as Record<string, { original: number; revised: number; difference: number }>);
   
   // State for new/edit activity form
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -129,6 +149,13 @@ const DetailEntry: React.FC = () => {
   // Parse formatted number back to numeric value
   const parseFormattedNumber = (value: string) => {
     return parseInt(value.replace(/\D/g, '')) || 0;
+  };
+
+  // Round to nearest thousand based on last 3 digits
+  const roundToThousand = (value: number) => {
+    const lastThreeDigits = value % 1000;
+    const baseValue = value - lastThreeDigits;
+    return lastThreeDigits >= 500 ? baseValue + 1000 : baseValue;
   };
 
   // Handle form input changes
@@ -168,13 +195,24 @@ const DetailEntry: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Calculate and round the totals
+    const originalTotal = roundToThousand(formData.volumeOriginal * formData.valueOriginal);
+    const revisedTotal = roundToThousand(formData.volumeRevised * formData.valueRevised);
+    
+    // Adjust the values to match the rounded totals
+    const adjustedFormData = {
+      ...formData,
+      valueOriginal: Math.round(originalTotal / formData.volumeOriginal),
+      valueRevised: Math.round(revisedTotal / formData.volumeRevised)
+    };
+    
     if (isEditing && currentActivityId) {
       // Update existing activity
-      updateActivityDetail(currentActivityId, formData);
+      updateActivityDetail(currentActivityId, adjustedFormData);
     } else {
       // Add new activity
       addActivityDetail({
-        ...formData,
+        ...adjustedFormData,
         budgetCodeId: id || ''
       });
     }
@@ -293,7 +331,6 @@ const DetailEntry: React.FC = () => {
               onClick={handlePaste}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              
               <ClipboardPaste className="h-4 w-4 mr-2" />
               Tempel Kegiatan
             </button>
@@ -534,10 +571,27 @@ const DetailEntry: React.FC = () => {
         <div className="overflow-x-auto">
           {sortedActivityCodes.map((code) => {
             const activities = groupedDetails[code];
+            const codeTotals = activityCodeTotals[code];
+            
             return (
               <div key={code} className="border-t border-gray-200">
                 <div className="bg-gray-50 px-6 py-3">
-                  <h4 className="text-sm font-medium text-gray-700">Kode Kegiatan: {code}</h4>
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-medium text-gray-700">Kode Kegiatan: {code}</h4>
+                    <div className="flex space-x-6">
+                      <span className="text-sm text-gray-600">
+                        Total Semula: <span className="font-medium">{formatCurrency(codeTotals.original)}</span>
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        Total Menjadi: <span className="font-medium">{formatCurrency(codeTotals.revised)}</span>
+                      </span>
+                      <span className="text-sm">
+                        Selisih: <span className={`font-medium ${codeTotals.difference > 0 ? 'text-green-600' : codeTotals.difference < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                          {formatCurrency(codeTotals.difference)}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">

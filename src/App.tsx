@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ProgramList from './pages/ProgramList';
 import BudgetCodes from './pages/BudgetCodes';
 import DetailEntry from './pages/DetailEntry';
+import FAQ from './pages/FAQ';
 import Login from './pages/Login';
 import { AppProvider } from './context/AppContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -68,6 +69,7 @@ function App() {
             <Route path="programs" element={<ProgramList />} />
             <Route path="budget-codes" element={<BudgetCodes />} />
             <Route path="detail-entry/:id" element={<DetailEntry />} />
+            <Route path="faq" element={<FAQ />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

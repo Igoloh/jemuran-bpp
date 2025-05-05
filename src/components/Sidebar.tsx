@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, Database } from 'lucide-react';
+import { LayoutDashboard, FileText, Database, HelpCircle } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
     { name: 'Program', path: '/programs', icon: <FileText className="h-5 w-5" /> },
-    { name: 'Kode Anggaran', path: '/budget-codes', icon: <Database className="h-5 w-5" /> }
+    { name: 'Kode Anggaran', path: '/budget-codes', icon: <Database className="h-5 w-5" /> },
+    { name: 'FAQ', path: '/faq', icon: <HelpCircle className="h-5 w-5" /> }
   ];
 
   return (
