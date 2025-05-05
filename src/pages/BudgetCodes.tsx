@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FileText, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const BudgetCodes: React.FC = () => {
   const { budgetCodes, activityDetails, deleteBudgetCode, updateQuarterlyWithdrawal } = useAppContext();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterProgram, setFilterProgram] = useState<'all' | 'Dukman' | 'PPIS'>('all');
-  const [filterRoCode, setFilterRoCode] = useState('');
-  const [filterSection, setFilterSection] = useState('all');
+  const location = useLocation();
+  const savedFilters = location.state?.filters;
+
+  const [searchTerm, setSearchTerm] = useState(savedFilters?.searchTerm || '');
+  const [filterProgram, setFilterProgram] = useState<'all' | 'Dukman' | 'PPIS'>(savedFilters?.filterProgram || 'all');
+  const [filterRoCode, setFilterRoCode] = useState(savedFilters?.filterRoCode || '');
+  const [filterSection, setFilterSection] = useState(savedFilters?.filterSection || 'all');
   const [editingWithdrawal, setEditingWithdrawal] = useState<string | null>(null);
   const [withdrawalForm, setWithdrawalForm] = useState({
     q1: 0,
@@ -406,13 +409,13 @@ const BudgetCodes: React.FC = () => {
                                   <div className="flex space-x-2">
                                     <button
                                       onClick={() => setEditingWithdrawal(null)}
-                                      className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                      className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
                                     >
                                       Batal
                                     </button>
                                     <button
                                       onClick={() => handleWithdrawalSave(code.id)}
-                                      className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                                      className="px-2 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                                     >
                                       Simpan
                                     </button>
@@ -435,7 +438,7 @@ const BudgetCodes: React.FC = () => {
                                 </div>
                                 <button
                                   onClick={() => handleWithdrawalEdit(code)}
-                                  className="mt-2 w-full px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                                  className="mt-2 w-full px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md"
                                 >
                                   Edit Penarikan
                                 </button>
@@ -446,6 +449,14 @@ const BudgetCodes: React.FC = () => {
                             <div className="flex justify-end space-x-2">
                               <Link
                                 to={`/detail-entry/${code.id}`}
+                                state={{ 
+                                  filters: {
+                                    searchTerm,
+                                    filterProgram,
+                                    filterRoCode,
+                                    filterSection
+                                  }
+                                }}
                                 className="text-blue-600 hover:text-blue-900"
                                 title="Edit Kegiatan"
                               >

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { ArrowLeft, Plus, Edit, Trash2, Copy, ClipboardPaste, Save } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -9,6 +9,11 @@ const DetailEntry: React.FC = () => {
   const isAdmin = userRole === 'Admin';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get filter state from location state
+  const filterState = location.state?.filters;
+
   const { budgetCodes, activityDetails, addActivityDetail, updateActivityDetail, deleteActivityDetail } = useAppContext();
 
   // PPIS section groupings with RO codes
@@ -327,7 +332,9 @@ const DetailEntry: React.FC = () => {
       <div className="text-center py-10">
         <p className="text-lg text-gray-600">Kode anggaran tidak ditemukan.</p>
         <button
-          onClick={() => navigate('/budget-codes')}
+          onClick={() => navigate('/budget-codes', {
+            state: { filters: filterState }
+          })}
           className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -342,7 +349,9 @@ const DetailEntry: React.FC = () => {
       <div className="text-center py-10">
         <p className="text-lg text-gray-600">Anda tidak memiliki akses ke halaman ini.</p>
         <button
-          onClick={() => navigate('/budget-codes')}
+          onClick={() => navigate('/budget-codes', {
+            state: { filters: filterState }
+          })}
           className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -358,7 +367,9 @@ const DetailEntry: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <button
-            onClick={() => navigate('/budget-codes')}
+            onClick={() => navigate('/budget-codes', {
+              state: { filters: filterState }
+            })}
             className="mr-4 text-gray-500 hover:text-gray-700"
           >
             <ArrowLeft className="h-5 w-5" />
