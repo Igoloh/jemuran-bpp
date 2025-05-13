@@ -186,9 +186,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw new Error('Budget code does not exist');
       }
 
+      // Ensure default values for required fields
+      const detailWithDefaults = {
+        ...activityDetail,
+        volumeOriginal: activityDetail.volumeOriginal || 0,
+        volumeRevised: activityDetail.volumeRevised || 0,
+        valueOriginal: activityDetail.valueOriginal || 0,
+        valueRevised: activityDetail.valueRevised || 0
+      };
+
       const { data, error } = await supabase
         .from('activity_details')
-        .insert([activityDetail])
+        .insert([detailWithDefaults])
         .select()
         .single();
 
@@ -205,14 +214,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           .insert([{
             type: 'create',
             activity_id: data.id,
-            budget_code_id: activityDetail.budgetCodeId,
+            budget_code_id: detailWithDefaults.budgetCodeId,
             details: {
-              activity_code: activityDetail.activityCode,
-              activity_title: activityDetail.activityTitle,
-              value_original: activityDetail.valueOriginal,
-              value_revised: activityDetail.valueRevised,
-              volume_original: activityDetail.volumeOriginal,
-              volume_revised: activityDetail.volumeRevised
+              activity_code: detailWithDefaults.activityCode,
+              activity_title: detailWithDefaults.activityTitle,
+              value_original: detailWithDefaults.valueOriginal,
+              value_revised: detailWithDefaults.valueRevised,
+              volume_original: detailWithDefaults.volumeOriginal,
+              volume_revised: detailWithDefaults.volumeRevised
             }
           }]);
 
